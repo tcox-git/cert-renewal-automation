@@ -1,0 +1,5 @@
+# Directories to be ignored
+ignore/
+
+# Files to be ignored
+*.exe
