@@ -1,13 +1,14 @@
 # Description: This script installs certbot, runs the renewal/creation command, converts the certificate to .pfx, then uploads to a key vault.
 #
 # Usage:
-# ./renew-cert.ps1 -Domain {domain_name} 
-#                  -ResourceGroup {rg_name} 
-#                  -StorageAccount {storage_name} 
-#                  -Container {container_name}  
-#                  -KeyVault {keyvault_name} 
-#                  -CertFile {certfile_name} 
-#                  -StagingAcmeServer {true/false}
+# ./renew-cert.ps1 -Domain {domain_name} `
+#                  -ResourceGroup {rg_name} `
+#                  -StorageAccount {storage_name} `
+#                  -Container {container_name} `
+#                  -KeyVault {keyvault_name} `
+#                  -CertFile {certfile_name} `
+#                  -PkPwd {pk_password} `
+#                  -StagingAcmeServer {true/false} `
 #                  -Email {email_addr}
 
 param (
@@ -29,6 +30,9 @@ param (
     [Parameter(Mandatory, HelpMessage = "Certificate file name.")]
     [string] $CertFile,
 
+    [Parameter(Mandatory, HelpMessage = "Private key password.")]
+    [string] $PkPwd,
+
     [Parameter(HelpMessage = "Use staging ACME server or not. Default to true")]
     [bool] $StagingAcmeServer = $true,
 
@@ -36,12 +40,11 @@ param (
     [string] $Email = "tsening.cox@sparrow.ai"
 )
 
-$CurrentDir = Get-Location
-$env:SYSTEM_DEFAULTWORKINGDIRECTORY = Split-Path -Path $CurrentDir -Parent
-$AuthHookPath       = "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\http\auth-hook.ps1"
-$CleanupHookPath    = "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\http\cleanup-hook.ps1"
+Write-Host "Default working directory: $($env:SYSTEM_DEFAULTWORKINGDIRECTORY)"
+#$env:SYSTEM_DEFAULTWORKINGDIRECTORY = Get-Location
+$AuthHookPath       = "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\SparrowInfrastructure\cert-renewal\http\auth-hook.ps1"
+$CleanupHookPath    = "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\SparrowInfrastructure\cert-renewal\http\cleanup-hook.ps1"
 $AcmeServer         = "https://acme-staging-v02.api.letsencrypt.org/directory"
-$PkPwd              = "Azure123456!"
 $env:RG_NAME        = $ResourceGroup
 $env:STORAGE_NAME   = $StorageAccount
 $env:CONTAINER_NAME = $Container
@@ -50,7 +53,7 @@ if (!$StagingAcmeServer) {
     $AcmeServer = "https://acme-v02.api.letsencrypt.org/directory"
 }
 Write-Host "ACME server: $($AcmeServer)"
-Write-Host "Default working directory: $($env:SYSTEM_DEFAULTWORKINGDIRECTORY)"
+#cat $AuthHookPath
 
 # install openssl
 Write-Host "Install openssl"
@@ -79,6 +82,5 @@ Write-Host "Convert certificate to .pfx"
 openssl pkcs12 -export -out "$CertFile.pfx" -inkey privkey.pem -in fullchain.pem -passout pass:$PkPwd
 
 # Import certificate to KeyVault
-# $PkPwd can be a secret pipeline (group) variable whose value is mapped to a KV secret
 $Password = ConvertTo-SecureString -String $PkPwd -AsPlainText -Force
 Import-AzKeyVaultCertificate -VaultName $KeyVault -Name $CertFile -FilePath "$CertFile.pfx" -Password $Password

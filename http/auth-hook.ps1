@@ -5,10 +5,14 @@
 $File = "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\$($env:CERTBOT_TOKEN)"
 New-Item $File -ItemType File -Value "$($env:CERTBOT_VALIDATION)"
 
-$env:STORAGECONTEXT = (Get-AzStorageAccount -ResourceGroupName $env:RG_NAME -Name $env:STORAGE_NAME).Context
-$env:BlobName = ".well-known/acme-challenge/$($env:CERTBOT_TOKEN)"
+#Write-Host "ACME challenge file name: $($env:CERTBOT_TOKEN)"
+#Write-Host "================= ACME challenge file content ================="
+#cat $File
+Write-Host "================= ACME challenge file content ================="
+
+$STORAGECONTEXT = (Get-AzStorageAccount -ResourceGroupName $env:RG_NAME -Name $env:STORAGE_NAME).Context
 
 # Upload the file to blob storage
-Set-AzStorageBlobContent -Container $env:CONTAINER_NAME -File $File -Context $env:STORAGECONTEXT -Blob $env:BlobName
+Set-AzStorageBlobContent -Container $env:CONTAINER_NAME -File $File -Context $STORAGECONTEXT -Blob ".well-known/acme-challenge/$($env:CERTBOT_TOKEN)"
 
 Start-Sleep -Seconds 30
