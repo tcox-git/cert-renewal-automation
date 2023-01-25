@@ -37,7 +37,7 @@ param (
     [bool] $StagingAcmeServer = $true,
 
     [Parameter(HelpMessage = "Email address.")]
-    [string] $Email = "tsening.cox@sparrow.ai"
+    [string] $Email = "first.last@gmail.com"
 )
 
 Write-Host "Default working directory: $($env:SYSTEM_DEFAULTWORKINGDIRECTORY)"
